@@ -27,6 +27,15 @@ cp config.example.py config.py
 # then edit config.py with your own Feishu values
 ```
 
+关键配置项：
+
+- `PROJECTS`: 项目路由与每个项目的飞书配置（必填）
+- `DEFAULT_APP_ID` / `DEFAULT_APP_SECRET`: 飞书应用凭证（可作为默认值）
+- `DEFAULT_BITABLE_APP_TOKEN` / `DEFAULT_BITABLE_TABLE_ID` / `DEFAULT_BITABLE_PARENT_NODE`: 多维表格写入目标（可作为默认值）
+- `DEFAULT_WEBHOOK`: 异常告警 webhook（推荐）
+- `UPLOAD_ROOT`: 文件落盘目录
+- `MAX_BYTES`: 单文件大小限制
+
 3. Run:
 
 ```bash
@@ -45,17 +54,17 @@ curl http://127.0.0.1:40404/healthz
 
 **Required form fields**
 
-- `bug_title` (<=1000 chars)
-- `player_id` or `steam_id` (<=255 chars)
-- `hardware` (<=65535 chars)
-- `type` (<=255 chars)
-- `version` (<=1000 chars)
+- `bug_title`
+- `player_id` or `steam_id`
+- `hardware`
+- `type`
+- `version`
 
 **Optional form fields**
 
-- `description` (<=65535 chars)
-- `name` (<=255 chars)
-- `contact` or `email` (<=255 chars)
+- `description`
+- `name`
+- `contact` or `email`
 - `isStableReproducible`
 
 **Required files** (choose one mode)
