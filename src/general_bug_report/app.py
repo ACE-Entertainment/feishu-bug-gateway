@@ -100,7 +100,7 @@ def create_app(settings: Settings | None = None) -> Flask:
             fmap["hardware"]: payload.get("hardware", ""),
             fmap["name"]: payload.get("name", ""),
             fmap["contact"]: payload.get("contact", ""),
-            fmap["description"]: payload.get("description", "")[:6000],
+            fmap["description"]: payload.get("description", ""),
             fmap["received"]: payload.get("upload_time", "") or "",
             fmap["category"]: payload.get("category", consts.get("category_value", "")),
         }
@@ -164,11 +164,11 @@ def create_app(settings: Settings | None = None) -> Flask:
     def upload_data(project: str):
         try:
             validate_project(project)
-            bug_title = request.form.get("bug_title", "")[:1000]
-            player_id = (request.form.get("player_id") or request.form.get("steam_id") or "")[:255]
-            hardware = request.form.get("hardware", "")[:65535]
-            bug_type = request.form.get("type", "")[:255]
-            version = request.form.get("version", "")[:1000]
+            bug_title = request.form.get("bug_title", "")
+            player_id = request.form.get("player_id") or request.form.get("steam_id") or ""
+            hardware = request.form.get("hardware", "")
+            bug_type = request.form.get("type", "")
+            version = request.form.get("version", "")
 
             if not bug_title:
                 return jsonify({"status": "fail", "message": "bug_title is required"}), 400
@@ -181,10 +181,10 @@ def create_app(settings: Settings | None = None) -> Flask:
             if not version:
                 return jsonify({"status": "fail", "message": "version is required"}), 400
 
-            description = request.form.get("description", "")[:65535]
-            name = request.form.get("name", "")[:255]
-            contact = request.form.get("contact", request.form.get("email", ""))[:255]
-            is_stable = request.form.get("isStableReproducible", "")[:10]
+            description = request.form.get("description", "")
+            name = request.form.get("name", "")
+            contact = request.form.get("contact", request.form.get("email", ""))
+            is_stable = request.form.get("isStableReproducible", "")
             job_id = uuid.uuid4().hex
 
             files_upload = request.files.get("files")

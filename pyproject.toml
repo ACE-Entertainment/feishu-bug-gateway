@@ -21,6 +21,7 @@ dev = ["pytest>=8.0", "ruff>=0.6"]
 [project.scripts]
 general-bug-report = "general_bug_report.__main__:app"
 general-bug-report-cleanup = "general_bug_report.cleanup:cleanup"
+general-bug-report-init-config = "general_bug_report.init_config:init_config"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

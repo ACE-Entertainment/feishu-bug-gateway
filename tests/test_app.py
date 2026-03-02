@@ -82,3 +82,4 @@ def test_accepts_files_bundle(client):
     body = resp.get_json()
     assert body["status"] == "success"
     assert body["project"] == "demo"
+
