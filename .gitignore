@@ -1,0 +1,9 @@
+config.py
+.env
+.env.*
+__pycache__/
+*.pyc
+error_bugreport.log
+config.json
+.pytest_cache/
+uploads/

@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "general-bug-report"
+version = "0.1.0"
+description = "Open-source Flask API for collecting bug reports and forwarding to Feishu Bitable."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "Flask==3.1.0",
+  "lark_oapi==1.3.6",
+  "Pillow==11.0.0",
+  "Requests==2.32.3",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[project.scripts]
+general-bug-report = "general_bug_report.__main__:app"
+general-bug-report-cleanup = "general_bug_report.cleanup:cleanup"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
