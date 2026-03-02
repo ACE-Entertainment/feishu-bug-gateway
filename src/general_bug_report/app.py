@@ -13,7 +13,7 @@ from werkzeug.utils import secure_filename
 
 from .services import (
     bitable_batch_create,
-    build_files_zip,
+    build_bundle_zip,
     compress_image_to_jpg,
     create_lark_client,
     send_error_webhook,
@@ -110,7 +110,7 @@ def create_app(settings: Settings | None = None) -> Flask:
             fields[fmap["screenshot"]] = [{"file_token": file_tokens["screenshot"]}]
         return fields
 
-    def process_job(project, job_id, bug_title, player_id, hardware, bug_type, version, description, name, contact, is_stable, log_path, save_path, img_path, files_path):
+    def process_job(project, job_id, bug_title, player_id, hardware, bug_type, version, description, name, contact, is_stable, img_path, files_path):
         try:
             if img_path:
                 img_path = compress_image_to_jpg(img_path)
@@ -121,11 +121,7 @@ def create_app(settings: Settings | None = None) -> Flask:
             token = tenant_token(bit["app_id"], bit["app_secret"])
             client = create_lark_client(bit["app_id"], bit["app_secret"])
 
-            if files_path:
-                files_token = upload_media(client, files_path, bit["parent_node"], bug_title)
-            else:
-                files_zip = build_files_zip(log_path, save_path, log_path.parent.parent / "files")
-                files_token = upload_media(client, files_zip, bit["parent_node"], bug_title)
+            files_token = upload_media(client, files_path, bit["parent_node"], bug_title)
 
             file_tokens = {"files": files_token}
             if img_path:
@@ -187,20 +183,32 @@ def create_app(settings: Settings | None = None) -> Flask:
             is_stable = request.form.get("isStableReproducible", "")
             job_id = uuid.uuid4().hex
 
-            files_upload = request.files.get("files")
-            files_path = log_path = save_path = None
-            if files_upload and files_upload.filename:
-                files_path = save_upload(files_upload, project, "files", cfg.allowed_files_ext, job_id)
-            else:
-                log_file = request.files.get("log_file")
-                if not log_file:
-                    return jsonify({"status": "fail", "message": "log_file is required"}), 400
-                log_path = save_upload(log_file, project, "logs", cfg.allowed_log_ext, job_id)
+            files_uploads = [fs for fs in request.files.getlist("files") if fs and fs.filename]
+            extra_uploads = []
 
-                save_file = request.files.get("save_file")
-                if not save_file:
-                    return jsonify({"status": "fail", "message": "save_file is required"}), 400
-                save_path = save_upload(save_file, project, "saves", cfg.allowed_save_ext, job_id)
+            log_file = request.files.get("log_file")
+            if log_file and log_file.filename:
+                extra_uploads.append((log_file, "log"))
+
+            save_file = request.files.get("save_file")
+            if save_file and save_file.filename:
+                extra_uploads.append((save_file, "save"))
+
+            if not files_uploads and not extra_uploads:
+                return jsonify({"status": "fail", "message": "files is required"}), 400
+
+            if len(files_uploads) == 1 and not extra_uploads:
+                files_path = save_upload(files_uploads[0], project, "files", cfg.allowed_files_ext, job_id)
+            else:
+                allowed_ext = cfg.allowed_files_ext | cfg.allowed_log_ext | cfg.allowed_save_ext
+                bundle_files = []
+                for idx, fs in enumerate(files_uploads):
+                    p = save_upload(fs, project, "attachments", allowed_ext, job_id)
+                    bundle_files.append((p, f"files_{idx + 1}{p.suffix}"))
+                for fs, prefix in extra_uploads:
+                    p = save_upload(fs, project, "attachments", allowed_ext, job_id)
+                    bundle_files.append((p, f"{prefix}{p.suffix}"))
+                files_path = build_bundle_zip(bundle_files, cfg.upload_root / project / job_id / "files")
 
             img_file = request.files.get("image")
             img_path = save_upload(img_file, project, "images", cfg.allowed_img_ext, job_id) if img_file and img_file.filename else None
@@ -218,8 +226,6 @@ def create_app(settings: Settings | None = None) -> Flask:
                 name,
                 contact,
                 is_stable,
-                log_path,
-                save_path,
                 img_path,
                 files_path,
             )
