@@ -55,7 +55,7 @@ def test_missing_required_field(client):
     assert resp.get_json()["status"] == "fail"
 
 
-def test_requires_save_file_when_no_files_bundle(client):
+def test_accepts_legacy_log_file_upload(client):
     data = {
         "bug_title": "t",
         "player_id": "p",
@@ -65,8 +65,8 @@ def test_requires_save_file_when_no_files_bundle(client):
         "log_file": (BytesIO(b"hello"), "player.log"),
     }
     resp = client.post("/demo", data=data, content_type="multipart/form-data")
-    assert resp.status_code == 400
-    assert "save_file" in resp.get_json()["message"]
+    assert resp.status_code == 200
+    assert resp.get_json()["status"] == "success"
 
 
 def test_accepts_files_bundle(client):
@@ -83,3 +83,61 @@ def test_accepts_files_bundle(client):
     body = resp.get_json()
     assert body["status"] == "success"
     assert body["project"] == "demo"
+
+
+def test_requires_files_when_no_attachment_provided(client):
+    data = {
+        "bug_title": "t",
+        "player_id": "p",
+        "hardware": "h",
+        "type": "bug",
+        "version": "1.0",
+    }
+    resp = client.post("/demo", data=data, content_type="multipart/form-data")
+    assert resp.status_code == 400
+    assert "files" in resp.get_json()["message"]
+
+
+def test_accepts_multiple_files_entries(client):
+    data = {
+        "bug_title": "t",
+        "player_id": "p",
+        "hardware": "h",
+        "type": "bug",
+        "version": "1.0",
+        "files": [
+            (BytesIO(b"PK\x03\x04"), "bundle-1.zip"),
+            (BytesIO(b"PK\x03\x04"), "bundle-2.zip"),
+        ],
+    }
+    resp = client.post("/demo", data=data, content_type="multipart/form-data")
+    assert resp.status_code == 200
+    assert resp.get_json()["status"] == "success"
+
+
+def test_rejects_non_zip_in_files_field(client):
+    data = {
+        "bug_title": "t",
+        "player_id": "p",
+        "hardware": "h",
+        "type": "bug",
+        "version": "1.0",
+        "files": (BytesIO(b"hello"), "player.log"),
+    }
+    resp = client.post("/demo", data=data, content_type="multipart/form-data")
+    assert resp.status_code == 400
+    assert "Unsupported file extension" in resp.get_json()["message"]
+
+
+def test_rejects_invalid_log_file_extension(client):
+    data = {
+        "bug_title": "t",
+        "player_id": "p",
+        "hardware": "h",
+        "type": "bug",
+        "version": "1.0",
+        "log_file": (BytesIO(b"hello"), "bad.sav"),
+    }
+    resp = client.post("/demo", data=data, content_type="multipart/form-data")
+    assert resp.status_code == 400
+    assert "Unsupported file extension" in resp.get_json()["message"]

@@ -57,11 +57,18 @@ def upload_media(client, file_path: Path, parent_node: str, title: str = "") -> 
 
 
 def build_files_zip(log_path: Path, save_path: Path, dest_dir: Path) -> Path:
+    return build_bundle_zip(
+        [(log_path, f"log{log_path.suffix}"), (save_path, f"save{save_path.suffix}")],
+        dest_dir,
+    )
+
+
+def build_bundle_zip(files: list[tuple[Path, str]], dest_dir: Path) -> Path:
     dest_dir.mkdir(parents=True, exist_ok=True)
     zip_path = dest_dir / "files.zip"
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-        zf.write(log_path, arcname=f"log{log_path.suffix}")
-        zf.write(save_path, arcname=f"save{save_path.suffix}")
+        for src_path, arcname in files:
+            zf.write(src_path, arcname=arcname)
     return zip_path
 
 

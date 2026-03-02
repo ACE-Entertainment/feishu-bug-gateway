@@ -5,9 +5,7 @@ A Flask API to receive bug reports with files, then asynchronously upload record
 ## Features
 
 - `POST /<project>` API with validation (`project` must exist in `PROJECTS` config).
-- Two upload modes:
-  - `files` (single archive).
-  - `log_file + save_file` (server zips them before Feishu upload).
+- Unified file upload: all attachments are finally sent to Feishu in the `files` field (recommended: upload one archive in `files`).
 - Optional screenshot compression (JPG).
 - Async background worker to avoid blocking clients.
 - Cleanup utility for expired upload folders.
@@ -79,10 +77,10 @@ curl http://127.0.0.1:20404/healthz
 - `contact` or `email`
 - `isStableReproducible`
 
-**Required files** (choose one mode)
+**Required files**
 
-- Mode A: `files` (default `.zip`)
-- Mode B: `log_file` + `save_file`
+- Recommended: upload one archive via `files` (default `.zip`)
+- Compatibility: multiple `files` entries and legacy `log_file` / `save_file` are accepted and auto-merged into one `files.zip`
 
 **Optional files**
 
@@ -105,9 +103,10 @@ curl -X POST "http://127.0.0.1:20404/demo" \
   -F type="Crash" \
   -F version="1.0.0" \
   -F description="Steps to reproduce..." \
-  -F log_file=@Player.log \
-  -F save_file=@save_data.zip
+  -F files=@bug_bundle.zip
 ```
+
+> 建议优先只传一个 `files` 压缩包；其他方式仅作兼容。
 
 ## Example request (Python)
 
@@ -116,10 +115,9 @@ import requests
 
 url = "http://127.0.0.1:20404/demo"
 
-with open("Player.log", "rb") as log_file, open("save_data.zip", "rb") as save_file:
+with open("bug_bundle.zip", "rb") as bug_bundle:
     files = {
-        "log_file": ("Player.log", log_file),
-        "save_file": ("save_data.zip", save_file),
+        "files": ("bug_bundle.zip", bug_bundle),
     }
     data = {
         "bug_title": "Crash while saving",
