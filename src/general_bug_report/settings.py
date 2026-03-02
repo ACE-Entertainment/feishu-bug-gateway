@@ -9,6 +9,7 @@ from typing import Any
 
 @dataclass
 class Settings:
+    port: int
     upload_root: Path
     max_bytes: int
     allowed_log_ext: set[str]
@@ -59,6 +60,7 @@ def load_settings() -> Settings:
     }
 
     settings = Settings(
+        port=int(local_cfg.get("PORT", os.getenv("BUG_REPORT_PORT", "20404"))),
         upload_root=Path(local_cfg.get("UPLOAD_ROOT", os.getenv("UPLOAD_ROOT", "./uploads"))).resolve(),
         max_bytes=int(local_cfg.get("MAX_BYTES", os.getenv("MAX_BYTES", str(6 * 1024 * 1024)))),
         allowed_log_ext=set(local_cfg.get("ALLOWED_LOG_EXT", {".log", ".zip", ".txt"})),

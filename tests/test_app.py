@@ -9,6 +9,7 @@ from general_bug_report.settings import Settings
 @pytest.fixture
 def settings(tmp_path):
     return Settings(
+        port=20404,
         upload_root=tmp_path,
         max_bytes=6 * 1024 * 1024,
         allowed_log_ext={".log", ".zip", ".txt"},
@@ -82,4 +83,3 @@ def test_accepts_files_bundle(client):
     body = resp.get_json()
     assert body["status"] == "success"
     assert body["project"] == "demo"
-
