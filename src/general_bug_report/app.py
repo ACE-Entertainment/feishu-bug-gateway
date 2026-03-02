@@ -27,6 +27,17 @@ PROJECT_RE = re.compile(r"^[a-z0-9_-]{1,20}$")
 
 
 def create_app(settings: Settings | None = None) -> Flask:
+    """
+    Create and configure a Flask application for receiving and processing project-specific bug reports.
+    
+    The returned app exposes a health check and a POST endpoint at /<project> that validates incoming form data and file uploads, saves files to a structured upload directory, and enqueues background jobs to upload and record the bug report to an external service. Project-specific configuration, field mappings, and constants are derived from the provided settings (or loaded defaults). Logging and webhook-based error reporting are configured for runtime failures.
+    
+    Parameters:
+        settings (Settings | None): Optional configuration to use; if None, settings are loaded via load_settings().
+    
+    Returns:
+        Flask: A Flask application instance configured to accept bug report uploads and process them in the background.
+    """
     logging.basicConfig(filename=LOG_FILE, level=logging.ERROR, format="%(asctime)s - %(levelname)s - %(message)s")
     cfg = settings or load_settings()
     validate_settings(cfg)
@@ -89,6 +100,19 @@ def create_app(settings: Settings | None = None) -> Flask:
         return dest_path
 
     def build_fields(project: str, payload: dict, file_tokens: dict) -> dict:
+        """
+        Builds a dictionary of field values mapped to the project's target field names for submission to the external tracking service.
+        
+        Uses the project's fields map and constants to translate known payload keys into the final fields structure. Recognized keys read from `payload` include: "bug_title", "version", "bug_type", "isStableReproducible" (stable), "player_id", "hardware", "name", "contact" (or email), "description", and "upload_time". The "category" field is set from `payload["category"]` if present, otherwise from the project's constant `category_value`. If `file_tokens` contains "files" or "screenshot" and the project mapping defines corresponding fields, those entries are added as lists containing a single dict with a `file_token` key.
+        
+        Parameters:
+            project (str): Project identifier used to select the fields mapping and constants.
+            payload (dict): Incoming report data; values for the recognized keys above are read from this dict.
+            file_tokens (dict): Mapping of upload tokens, e.g. {"files": "<token>", "screenshot": "<token>"}.
+        
+        Returns:
+            dict: A mapping from the project's destination field names to their values suitable for submission; file and screenshot fields, when present, are lists of objects with a `file_token`.
+        """
         fmap = fields_map_for(project)
         consts = consts_for(project)
         fields = {
@@ -162,6 +186,20 @@ def create_app(settings: Settings | None = None) -> Flask:
 
     @app.route("/<project>", methods=["POST"])
     def upload_data(project: str):
+        """
+        Handle a POST request uploading a bug report for the given project and enqueue background processing.
+        
+        Validates required form fields (bug_title, player_id/steam_id, hardware, type, version), saves uploaded files to project-specific subdirectories, and submits a background job to process and upload the report. On validation or file-related ValueError conditions the handler returns a 400 response with a JSON object containing "status": "fail" and a "message". On successful submission it returns a 200 response with JSON containing "status": "success", the "project", and the generated "job_id". On unexpected internal errors it logs and reports the failure, then returns a 200 response with JSON {"status": "success", "message": "ok"}.
+        
+        Parameters:
+            project (str): Project identifier used to validate configuration and determine storage/webhook targets.
+        
+        Returns:
+            JSON response with one of:
+              - `{"status": "success", "project": <project>, "job_id": <job_id>}` and HTTP 200 when the job is accepted.
+              - `{"status": "fail", "message": <error message>}` and HTTP 400 for client-side validation or file errors.
+              - `{"status": "success", "message": "ok"}` and HTTP 200 after reporting an internal error.
+        """
         try:
             validate_project(project)
             bug_title = request.form.get("bug_title", "")
