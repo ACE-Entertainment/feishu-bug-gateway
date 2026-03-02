@@ -113,3 +113,31 @@ def test_accepts_multiple_files_entries(client):
     resp = client.post("/demo", data=data, content_type="multipart/form-data")
     assert resp.status_code == 200
     assert resp.get_json()["status"] == "success"
+
+
+def test_rejects_non_zip_in_files_field(client):
+    data = {
+        "bug_title": "t",
+        "player_id": "p",
+        "hardware": "h",
+        "type": "bug",
+        "version": "1.0",
+        "files": (BytesIO(b"hello"), "player.log"),
+    }
+    resp = client.post("/demo", data=data, content_type="multipart/form-data")
+    assert resp.status_code == 400
+    assert "Unsupported file extension" in resp.get_json()["message"]
+
+
+def test_rejects_invalid_log_file_extension(client):
+    data = {
+        "bug_title": "t",
+        "player_id": "p",
+        "hardware": "h",
+        "type": "bug",
+        "version": "1.0",
+        "log_file": (BytesIO(b"hello"), "bad.sav"),
+    }
+    resp = client.post("/demo", data=data, content_type="multipart/form-data")
+    assert resp.status_code == 400
+    assert "Unsupported file extension" in resp.get_json()["message"]

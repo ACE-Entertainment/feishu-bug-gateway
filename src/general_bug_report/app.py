@@ -200,12 +200,12 @@ def create_app(settings: Settings | None = None) -> Flask:
             if len(files_uploads) == 1 and not extra_uploads:
                 files_path = save_upload(files_uploads[0], project, "files", cfg.allowed_files_ext, job_id)
             else:
-                allowed_ext = cfg.allowed_files_ext | cfg.allowed_log_ext | cfg.allowed_save_ext
                 bundle_files = []
                 for idx, fs in enumerate(files_uploads):
-                    p = save_upload(fs, project, "attachments", allowed_ext, job_id)
+                    p = save_upload(fs, project, "attachments", cfg.allowed_files_ext, job_id)
                     bundle_files.append((p, f"files_{idx + 1}{p.suffix}"))
                 for fs, prefix in extra_uploads:
+                    allowed_ext = cfg.allowed_log_ext if prefix == "log" else cfg.allowed_save_ext
                     p = save_upload(fs, project, "attachments", allowed_ext, job_id)
                     bundle_files.append((p, f"{prefix}{p.suffix}"))
                 files_path = build_bundle_zip(bundle_files, cfg.upload_root / project / job_id / "files")
