@@ -22,9 +22,18 @@ pip install -e .
 
 2. Configure:
 
+方式 A（手动）：
+
 ```bash
 cp config.example.py config.py
 # then edit config.py with your own Feishu values
+```
+
+方式 B（交互向导，推荐新手）：
+
+```bash
+general-bug-report-init-config
+# 按提示一步步输入，会自动生成 config.py
 ```
 
 关键配置项：
