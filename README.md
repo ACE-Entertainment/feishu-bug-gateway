@@ -4,7 +4,7 @@ A Flask API to receive bug reports with files, then asynchronously upload record
 
 ## Features
 
-- `POST /<project>` API with validation.
+- `POST /<project>` API with validation (`project` must exist in `PROJECTS` config).
 - Two upload modes:
   - `files` (single archive).
   - `log_file + save_file` (server zips them before Feishu upload).
@@ -55,8 +55,10 @@ python -m general_bug_report
 4. Health check:
 
 ```bash
-curl http://127.0.0.1:40404/healthz
+curl http://127.0.0.1:20404/healthz
 ```
+
+> 默认监听端口是 `20404`，可通过 `config.py` 中的 `PORT` 或环境变量 `BUG_REPORT_PORT` 覆盖。
 
 ## API
 
@@ -96,7 +98,7 @@ curl http://127.0.0.1:40404/healthz
 ## Example request (curl)
 
 ```bash
-curl -X POST "http://127.0.0.1:40404/demo" \
+curl -X POST "http://127.0.0.1:20404/demo" \
   -F bug_title="Crash while saving" \
   -F player_id="123456" \
   -F hardware="CPU i7, RTX 3070" \
@@ -112,7 +114,7 @@ curl -X POST "http://127.0.0.1:40404/demo" \
 ```python
 import requests
 
-url = "http://127.0.0.1:40404/demo"
+url = "http://127.0.0.1:20404/demo"
 
 with open("Player.log", "rb") as log_file, open("save_data.zip", "rb") as save_file:
     files = {
