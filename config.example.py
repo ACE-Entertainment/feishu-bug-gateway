@@ -2,6 +2,8 @@
 Never commit config.py with real secrets.
 """
 
+PORT = 20404
+
 UPLOAD_ROOT = "./uploads"
 MAX_BYTES = 6 * 1024 * 1024
 
